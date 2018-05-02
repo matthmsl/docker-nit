@@ -200,10 +200,15 @@ public class DockerEngine
 
 
 	fun checkConnectivity:Bool do
-                return true
+		var response = self.get("info")
+		if response.to_s!="" then
+			return true
+		else
+			return false
+		end
 	end
 
-	fun createContainer(imageName:String,name:String) do
+	fun createContainer(imageName:String,name:String) : String do
                 var data="""
                 {
                         "Image":""""+imageName+""""
@@ -215,12 +220,14 @@ public class DockerEngine
                         var secRes=post("images/create?fromImage={imageName}&tag=latest","")
                         if secRes.to_s.has("message".to_re) then
                                 print "Operation failed : {secRes.to_s}"
+				return ""
                         else
                                 updateImageList
-                                createContainer(imageName,name)
+                                return createContainer(imageName,name)
                         end
                 else
                         updateContainerList
+			return response.to_s.to_json_value["Id"].to_s
                 end
 	end
 
@@ -304,11 +311,14 @@ public class Container
                 print response.to_s
 	end
 
-	fun rename(name:String)	do
+	fun rename(name:String)	: Bool do
                 var response = self.post("containers/{id}/rename?name={name}","")
                 print response.to_s
                 if response.to_s=="" then
                         self.name = name
+			return true
+		else
+			return false
                 end
 	end
 
@@ -322,7 +332,7 @@ public class Container
                 print response.to_s
 	end
 
-	fun getStatus do
+	fun getStatus : Response do
                 var response = self.get("containers/{id}/json")
                 print response.to_s
                 return response
@@ -340,7 +350,9 @@ public class Image
 	var name:String is serialize_as("Image")
         var id:String is serialize_as("Id")
 
-	fun getInfo do
-
+	fun getInfo : Response do
+		var response=get("image/{name}/history")
+		print response.to_s
+		return response
 	end
 end
